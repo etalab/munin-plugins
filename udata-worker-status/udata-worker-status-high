@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# to be executed as `udata` user (with pyenv activated)
-
 QUEUE=high
+UDATA_PATH=/srv/udata/bin/udata
+UDATA_SETTINGS=/srv/udata/udata.cfg
 
 if [ "$1" = "config" ]; then
-    udata worker status --munin-config -q $QUEUE
+    UDATA_SETTINGS=$UDATA_SETTINGS $UDATA_PATH worker status --munin-config -q $QUEUE
 else
-    udata worker status --munin -q $QUEUE
+    UDATA_SETTINGS=$UDATA_SETTINGS $UDATA_PATH worker status --munin -q $QUEUE
 fi
