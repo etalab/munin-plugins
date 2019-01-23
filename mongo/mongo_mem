@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import sys
+import os
+import pymongo
+
+# Config
+URI = os.environ.get('MONGO_URI', 'localhost')
+
+
+def get_status(key):
+    client = pymongo.MongoClient(URI)
+    status = client.admin.command('serverStatus', workingSet=True)
+    return status[key]
+
+
+def ok(s):
+    return s in ('resident', 'virtual', 'mapped')
+
+
+def get_data():
+    for k, v in get_status('mem').items():
+        if ok(k):
+            print('{0}.value {1}'.format(k, v * 1024 * 1024))
+
+
+def get_config():
+    print('graph_title MongoDB memory usage')
+    print('graph_args --base 1024 -l 0 --vertical-label Bytes')
+    print('graph_category MongoDB')
+
+    for key in get_status('mem'):
+        if ok(key):
+            print('{0}.label {0}'.format(key))
+            print('{}.draw LINE1'.format(key))
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == 'config':
+        get_config()
+    else:
+        get_data()

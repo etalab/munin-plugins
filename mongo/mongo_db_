@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+# from __future__ import print_function
+
+import os
+import pymongo
+import re
+import sys
+
+# Config
+URI = os.environ.get('MONGO_URI', 'localhost')
+IGNORED = os.environ.get('MONGO_IGNORE_COLLECTION', '').split(',')
+GRAPHS = {
+    'collcount': {
+        'index': 'count',
+        'title': 'per collection document count',
+        'yaxis': 'documents',
+        'base': '1000',
+        'scale': '--logarithmic -l1',
+        'category': 'db',
+    },
+    'collsize': {
+        'index': 'size',
+        'title': 'per collection data size',
+        'yaxis': 'Byte',
+        'base': '1024',
+        'scale': '--logarithmic -l1 --units=si',
+        'category': 'db',
+    },
+    'avgsize': {
+        'index': 'avgObjSize',
+        'title': 'average object size',
+        'yaxis': 'Byte',
+        'base': '1024',
+        'scale': '--logarithmic --units=si',
+        'category': 'db',
+    },
+    'storage': {
+        'index': 'storageSize',
+        'title': 'per collection storage size',
+        'yaxis': 'Byte',
+        'base': '1024',
+        'scale': '--logarithmic -l1 --units=si',
+        'category': 'db',
+    },
+    'indexsize': {
+        'index': 'totalIndexSize',
+        'title': 'per collection index size',
+        'yaxis': 'Byte',
+        'base': '1024',
+        'scale': '--logarithmic -l 1 --units=si',
+        'category': 'db',
+    },
+}
+RE_WILDCARD = re.compile(r'^mongo_db_([\w\d-]+)$')
+
+
+def get_db(name):
+    client = pymongo.MongoClient(URI)
+    return client[name]
+
+
+def get_data(dbname):
+    db = get_db(dbname)
+    for graph, specs in GRAPHS.items():
+        # for db in databases():
+        print('multigraph {graph}_{db.name}'.format(graph=graph, db=db))
+        for coll in db.collection_names():
+            serie = '{graph}_{db.name}_{coll}'.format(graph=graph, db=db, coll=coll)
+            collstats = db.command('collstats', coll)
+            value = collstats.get(specs['index'], 0)
+            print('{serie}.value {value}'.format(**locals()))
+
+
+def get_config(dbname):
+    db = get_db(dbname)
+    for graph, specs in GRAPHS.items():
+        print('multigraph {graph}_{db.name}'.format(graph=graph, db=db))
+        print('graph_title {db.name} - {title}'.format(db=db, **specs))
+        print('graph_args --base {base} {scale}'.format(**specs))
+        print('graph_vlabel {yaxis}'.format(**specs))
+        print('graph_category MongoDB')
+        for coll in db.collection_names():
+            serie = '{graph}_{db.name}_{coll}'.format(graph=graph, db=db, coll=coll)
+            print('{serie}.label {coll}'.format(serie=serie, coll=coll))
+            print('{}.min 0'.format(serie))
+            print('{}.draw LINE1'.format(serie))
+
+
+def suggest():
+    print('keys')
+    for key in GRAPHS.keys():
+        print(key)
+
+
+if __name__ == '__main__':
+    filename = os.path.basename(sys.argv[0])
+    m = RE_WILDCARD.match(filename)
+    if not m:
+        print('This wildcard plugin must by symlinked with '
+              'the pattern mongo_db_<name>')
+        sys.exit(-1)
+    dbname = m.group(1)
+
+    if len(sys.argv) < 2:
+        get_data(dbname)
+    elif sys.argv[1] == 'config':
+        get_config(dbname)
+    elif sys.argv[1] == 'autoconf':
+        print('yes')
+    elif sys.argv[1] == 'suggest':
+        suggest()
+    else:
+        print('invalid argument')
+        sys.exit(-11)
