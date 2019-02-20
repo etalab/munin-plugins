@@ -46,7 +46,7 @@ A multigraph plugin providing the following metrics for a given database:
 
 This is a wildcard plugin expecting the database name as filename parameter.
 
-**Ex:** to displau metrics about `mine` collection, just name it `mongo_db_mine`
+**Ex:** to display metrics about `mine` collection, just name it `mongo_db_mine`
 
 ```shell
 ln -s /path/to/repository/mongo/mongo_db_ /etc/munin/plugins/mongo_db_mine
