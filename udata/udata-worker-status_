@@ -1,0 +1,17 @@
+#!/bin/bash
+##
+# Monitor udata worker status for a given queue
+#
+# The queue name is expected as woldcard parameter (ie. udata-worker-status_QUEUE)
+# The udata config is expected as environment variable (ie. in /etc/munin/plugin-conf.d):
+#   UDATA_BIN=/srv/udata/bin/udata
+#   UDATA_SETTINGS=/srv/udata/udata.cfg
+##
+
+QUEUE=`echo $0 | cut -d _ -f 2`
+
+if [ "$1" = "config" ]; then
+    $UDATA_BIN worker status --munin-config -q $QUEUE
+else
+    $UDATA_BIN worker status --munin -q $QUEUE
+fi
