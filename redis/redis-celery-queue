@@ -1,0 +1,61 @@
+#!/bin/sh
+# -*- sh -*-
+
+: << =cut
+
+=head1 NAME
+
+redis-celery-queue - Plugin to monitor the length of the default, high and low celery queue in redis
+
+=head1 CONFIGURATION
+
+No configuration
+
+=head1 AUTHOR
+
+V
+
+=head1 LICENSE
+
+MIT
+
+=head1 MAGIC MARKERS
+
+ #%# family=auto
+ #%# capabilities=autoconf
+
+=cut
+
+. $MUNIN_LIBDIR/plugins/plugin.sh
+
+if [ "$1" = "autoconf" ]; then
+    if [ -f /usr/bin/redis-cli ]; then
+        echo yes
+        exit 0
+    else
+        echo "no (no /usr/bin/redis-cli)"
+        exit 0
+    fi
+fi
+
+if [ "$1" = "config" ]; then
+
+    echo 'graph_title length of celery queues in redis'
+    echo 'graph_args -l 0 --base 1000'
+    echo 'graph_vlabel tasks'
+    echo 'graph_category redis'
+    echo 'hq.label high queue'
+    echo 'hq.type GAUGE'
+    echo 'lq.label low queue'
+    echo 'lq.type GAUGE'
+    echo 'dq.label default queue'
+    echo 'dq.type GAUGE'
+    print_warning dq
+    print_critical dq
+    exit 0
+fi
+
+/usr/bin/redis-cli -n 0 llen "default" | awk '{ print "dq.value " $1 }' 
+/usr/bin/redis-cli -n 0 llen "high" | awk '{ print "hq.value " $1 }'
+/usr/bin/redis-cli -n 0 llen "low" | awk '{ print "lq.value " $1 }'
+
