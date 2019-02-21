@@ -3,6 +3,7 @@ A collection of plugins for Munin used @Etalab.
 
 - [MongoDB](mongo/)
 - [Redis](redis/)
+- [udata](udata/)
 
 ## udata-worker-status
 
